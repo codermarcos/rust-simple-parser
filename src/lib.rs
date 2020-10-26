@@ -4,13 +4,12 @@ use std::collections::HashMap;
 enum Actions {
 	EmptyState,
 	ReadingInnerTag,
-	ReadingSomething,
 	ReadingAttributes,
 	ReadingOpenTagName,
 	ReadingCloseTagName,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct HtmlElement {
 	pub node_type: String,
 	pub text_content: String,
@@ -28,365 +27,6 @@ impl HtmlElement {
 		}
 	}
 }
-
-/*
-pub fn parse_try_0(html: String) -> Vec<HtmlElement> {
-	let mut parsed: Vec<HtmlElement> = vec![];
-
-	let mut tag_opened = 0;
-	let mut reading = String::new();
-	let mut actions: Vec<Actions> = vec![];
-	let mut readed_but_not_tokened = String::new();
-
-	for letter in html.chars() {
-		let length_tokened = parsed.len();
-		let length_actions = actions.len();
-		let last_action = actions.last().clone();
-		let last_idx_tokened = if length_tokened > 0 { length_tokened - 1 } else { 0 };
-
-		match letter.to_string().as_str() {
-			"<" => {
-				actions.push(Actions::ReadingOpenOrClose);
-				reading = String::new();
-
-				if length_tokened > 0 && readed_but_not_tokened.capacity() != 0 {
-					parsed[last_idx_tokened].text_content = readed_but_not_tokened.clone();
-					readed_but_not_tokened = String::new();
-				}
-			}
-			">" => {
-				let to_read = reading.clone();
-
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingOpenOrClose => {
-							let element = HtmlElement {
-								tag_name: String::from(to_read),
-								text_content: String::new(),
-								attributes: HashMap::new(),
-								child_nodes: vec![],
-							};
-
-							if tag_opened == 0 {
-								parsed.push(element);
-								tag_opened += 1;
-							} else {
-								parsed[last_idx_tokened].child_nodes.push(element);
-							}
-						}
-						Actions::ReadingClosedTag => {
-							tag_opened -= 1;
-						}
-						_ => {
-
-						}
-					}
-
-					actions.truncate(length_actions - 1);
-				}
-				reading = String::new();
-			}
-			"/" => {
-				if length_actions > 0 {
-					actions.truncate(length_actions - 1);
-					actions.push(Actions::ReadingClosedTag);
-
-					reading = String::new();
-				}
-			}
-			_ => {
-
-				match last_action {
-					Some(last) =>  {
-						reading = format!("{}{}", reading, letter.to_string());
-						let to_read = reading.clone();
-
-						match last {
-							Actions::ReadingOpenOrClose => {
-								if letter.to_string().as_str() == " " {
-									let element = HtmlElement {
-										tag_name: String::from(to_read),
-										text_content: String::new(),
-										attributes: HashMap::new(),
-										child_nodes: vec![],
-									};
-									if tag_opened == 0 {
-										parsed.push(element);
-										tag_opened += 1;
-									} else {
-										parsed[last_idx_tokened].child_nodes.push(element);
-									}
-									reading = String::new();
-								}
-							}
-							Actions::ReadingClosedTag => {
-								if readed_but_not_tokened.capacity() != 0 {
-									parsed[last_idx_tokened].text_content = readed_but_not_tokened.clone();
-									readed_but_not_tokened = String::new();
-								}
-							}
-							Actions::ReadingSomething => {
-								readed_but_not_tokened = to_read;
-							}
-						}
-					}
-					None => {
-						actions.push(Actions::ReadingSomething);
-					}
-				}
-			}
-		}
-	}
-
-	parsed
-}
-*/
-
-/*
-pub fn parse_try_1(html: String) -> Option<HtmlElement> {
-	let mut parsed: Option<HtmlElement> = None;
-	let mut to_read = html.clone();
-
-	let mut readed = String::new();
-	let mut reading = String::new();
-	let mut actions: Vec<Actions> = vec![];
-
-	fn createElement(tag_name: String) -> HtmlElement {
-		HtmlElement {
-			tag_name: tag_name,
-			child_nodes: vec![],
-			attributes: HashMap::new(),
-			text_content: String::new(),
-		}
-	}
-	for letter in html.chars() {
-		let last_action = actions.last().clone();
-		readed = readed + letter.to_string().as_str();
-
-		match letter {
-			'<' => {
-				actions.push(Actions::ReadingTagName);
-				reading = String::new();
-			}
-			'>' => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingTagName => {
-							parsed = Some(createElement(reading));
-							actions.pop();
-							break;
-						}
-						_ => {}
-					}
-				}
-			}
-			_ => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingTagName => {
-							if letter == ' ' {
-								parsed = Some(createElement(reading));
-								actions.pop();
-								break;
-							} else {
-								reading = reading + letter.to_string().as_str();
-							}
-						}
-						Actions::ReadingSomething => {
-							reading = reading + letter.to_string().as_str();
-						}
-					}
-				} else {
-					actions.push(Actions::ReadingSomething);
-					reading = reading + letter.to_string().as_str();
-				}
-			}
-		}
-
-		to_read = to_read[readed.capacity()..].to_string();
-	}
-
-	for letter in to_read.chars().rev() {
-		let last_action = actions.last().clone();
-		readed = readed + letter.to_string().as_str();
-
-		match letter {
-			'>' => {
-				actions.push(Actions::ReadingTagName);
-				reading = String::new();
-			}
-			'<' => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingTagName => {
-							parsed = Some(createElement(reading));
-							actions.pop();
-							break;
-						}
-						_ => {}
-					}
-				}
-			}
-			_ => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingTagName => {
-							if letter == '/' {
-								parsed = Some(createElement(reading));
-								actions.pop();
-								break;
-							} else {
-								reading = reading + letter.to_string().as_str();
-							}
-						}
-						Actions::ReadingSomething => {
-							reading = reading + letter.to_string().as_str();
-						}
-					}
-				} else {
-					actions.push(Actions::ReadingSomething);
-					reading = reading + letter.to_string().as_str();
-				}
-			}
-		}
-
-		to_read = to_read[readed.capacity()..].to_string();
-	}
-
-	parsed
-}
-*/
-
-/*
-pub fn parse_try_2(html: String) -> Option<HtmlElement> {
-	let mut parsed: Option<HtmlElement> = None;
-	let mut to_read = html.clone();
-
-	fn create_element(tag_name: String) -> Option<HtmlElement> {
-		Some(HtmlElement {
-			tag_name: tag_name,
-			child_nodes: vec![],
-			attributes: HashMap::new(),
-			text_content: String::new(),
-		})
-	}
-
-	let mut reading = String::new();
-	let mut actions: Vec<Actions> = vec![];
-
-	for letter in html.chars() {
-		let last_action = actions.last().clone();
-
-		match letter {
-			'<' => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::FindingTagClose => {
-							actions.pop();
-							reading = String::new();
-							actions.push(Actions::ReadingChildTagName);
-						}
-						Actions::ReadingSomething => {
-							if let Some(ref mut parsed) = parsed {
-								parsed.text_content = reading.to_string().clone();
-								reading = String::new();
-								actions.pop();
-								actions.push(Actions::ReadingChildTagName);
-							}
-						}
-						_ => {}
-					}
-				} else {
-					actions.push(Actions::ReadingOpenTagName);
-					to_read = to_read.chars().skip(1).collect();
-					reading = String::new();
-				}
-			}
-			'>' => {
-				to_read = to_read.chars().skip(1).collect();
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingOpenTagName => {
-							parsed = create_element(reading.clone());
-							reading = String::new();
-							actions.pop();
-							actions.push(Actions::FindingTagClose);
-						}
-						Actions::ReadingCloseTagName => {
-							actions.pop();
-							if actions.len() == 1 && actions[0] == Actions::FindingTagClose {
-								actions.pop();
-								break;
-							}
-						}
-						Actions::ReadingAttributes => {
-							actions.pop();
-							actions.push(Actions::FindingTagClose);
-						}
-						_ => {}
-					}
-				}
-			}
-			'/' => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingChildTagName => {
-							actions.pop();
-							actions.push(Actions::ReadingCloseTagName);
-						}
-						_ => {}
-					}
-				}
-			}
-			_ => {
-				if let Some(last) = last_action {
-					match last {
-						Actions::ReadingOpenTagName => {
-							if letter == ' ' {
-								parsed = create_element(reading.clone());
-								reading = String::new();
-								actions.pop();
-
-								actions.push(Actions::ReadingAttributes);
-							} else {
-								reading = reading + letter.to_string().as_str();
-							}
-						}
-						Actions::ReadingChildTagName => {
-							let element = parse(to_read.clone());
-
-							if let Some(ref mut parent) = parsed {
-								if let Some(child) = element {
-									parent.child_nodes = vec![child];
-								}
-							}
-
-							actions.pop();
-						}
-						Actions::ReadingCloseTagName => {
-
-						}
-						Actions::ReadingSomething => {
-							reading = reading + letter.to_string().as_str();
-						}
-						Actions::FindingTagClose => {
-							reading = reading + letter.to_string().as_str();
-							actions.push(Actions::ReadingSomething);
-						}
-						_ => {}
-					}
-				} else {
-					reading = reading + letter.to_string().as_str();
-					actions.push(Actions::ReadingSomething);
-				}
-				to_read = to_read.chars().skip(1).collect();
-			}
-		}
-	}
-
-	parsed
-}
-*/
 
 pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 	let mut parsed: Vec<HtmlElement> = vec![];
@@ -454,7 +94,6 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 								state.push(Actions::ReadingInnerTag);
 							}
 							Actions::ReadingCloseTagName => {
-								reading = String::new();
 								state.pop();
 								break (parsed, idx);
 							}
@@ -505,10 +144,137 @@ pub fn parse(html: String) -> Vec<HtmlElement> {
 
 #[cfg(test)]
 mod tests {
+	use std::collections::HashMap;
+	use crate::HtmlElement;
 	use crate::parse;
+
 	#[test]
-	fn parse_simple_tag() {
-		let html = String::from("<h1>Olá Marcos</h1>");
-		let lexer = parse(html);
+	fn parse_text() {
+		let text_content = String::from("Olá Marcos");
+		let lexer = parse(text_content.clone());
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("text"),
+				text_content: text_content,
+				attributes: HashMap::new(),
+				child_nodes: Vec::new(),
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
+
+	#[test]
+	fn parse_node() {
+		let text_content = String::from("Olá Marcos");
+		let html_h1 = String::from("<h1>") + &text_content + &String::from("</h1>");
+		let lexer = parse(html_h1);
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("h1"),
+				text_content: text_content,
+				attributes: HashMap::new(),
+				child_nodes: Vec::new(),
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
+
+	#[test]
+	fn parse_node_with_child() {
+		let text_content = String::from("Olá Marcos");
+		let html_h1_b = String::from("<h1><b>") + &text_content + &String::from("</b></h1>");
+		let lexer = parse(html_h1_b);
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("h1"),
+				text_content: String::new(),
+				attributes: HashMap::new(),
+				child_nodes: vec![
+					HtmlElement {
+						node_type: String::from("b"),
+						text_content: text_content,
+						attributes: HashMap::new(),
+						child_nodes: Vec::new(),
+					}		
+				],
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
+
+	#[test]
+	fn parse_node_with_child_and_text() {
+		let text_content_h1 = String::from("Olá ");
+		let text_content_b = String::from("Marcos");
+		let html_b = String::from("<b>") + &text_content_b + &String::from("</b>");
+		let html_h1_b = String::from("<h1>") + &text_content_h1 + &html_b + &String::from("</h1>");
+		let lexer = parse(html_h1_b);
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("h1"),
+				text_content: text_content_h1,
+				attributes: HashMap::new(),
+				child_nodes: vec![
+					HtmlElement {
+						node_type: String::from("b"),
+						text_content: text_content_b,
+						attributes: HashMap::new(),
+						child_nodes: Vec::new(),
+					}		
+				],
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
+
+	#[test]
+	fn parse_node_with_sinbling_and_child() {
+		let text_content_h1 = String::from("Olá ");
+		let text_content_b = String::from("Marcos");
+		let text_content_h2 = String::from("Sou Frontend");
+		let html_b = String::from("<b>") + &text_content_b + &String::from("</b>");
+		let html_h1_b = String::from("<h1>") + &text_content_h1 + &html_b + &String::from("</h1>");
+		let html_h1_b_h2 = html_h1_b + &String::from("<h2>") + &text_content_h2 + &String::from("</h2>");
+		let html_header = String::from("<header>") + &html_h1_b_h2 + &String::from("</header>");
+		let lexer = parse(html_header);
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("header"),
+				text_content: String::new(),
+				attributes: HashMap::new(),
+				child_nodes: vec![
+					HtmlElement {
+						node_type: String::from("h1"),
+						text_content: text_content_h1,
+						attributes: HashMap::new(),
+						child_nodes: vec![
+							HtmlElement {
+								node_type: String::from("b"),
+								text_content: text_content_b,
+								attributes: HashMap::new(),
+								child_nodes: Vec::new(),
+							}		
+						],
+					},
+					HtmlElement {
+						node_type: String::from("h2"),
+						text_content: text_content_h2,
+						attributes: HashMap::new(),
+						child_nodes: Vec::new(),
+					}		
+				],
+			}
+		];
+
+		assert_eq!(expected, lexer);
 	}
 }
