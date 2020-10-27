@@ -327,6 +327,7 @@ mod tests {
 
 		assert_eq!(expected, lexer);
 	}
+
 	#[test]
 	fn parse_self_close_nodes() {
 		let html_form = String::from("<form><input /></form>");
@@ -378,7 +379,7 @@ mod tests {
 								text_content: text_content_b,
 								attributes: HashMap::new(),
 								child_nodes: Vec::new(),
-							}		
+							},		
 						],
 					},
 					HtmlElement {
@@ -386,7 +387,7 @@ mod tests {
 						text_content: text_content_h2,
 						attributes: HashMap::new(),
 						child_nodes: Vec::new(),
-					}		
+					},
 				],
 			}
 		];
