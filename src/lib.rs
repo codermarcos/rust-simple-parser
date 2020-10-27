@@ -353,6 +353,27 @@ mod tests {
 	}
 
 	#[test]
+	fn parse_nodes_with_attributes() {
+		let html_form = String::from("<input id=\"teste\" />");
+		let lexer = parse(html_form);
+
+		let mut attributes: HashMap<String, Option<String>> = HashMap::new();
+
+		attributes.insert("id".to_string(), Some(String::from("\"teste\"")));
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("input"),
+				text_content: String::new(),
+				attributes: attributes,
+				child_nodes: vec![],
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
+
+	#[test]
 	fn parse_node_with_sinbling_and_child() {
 		let text_content_h1 = String::from("Olá ");
 		let text_content_b = String::from("Marcos");
