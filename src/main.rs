@@ -20,6 +20,11 @@ fn main() {
 
 	println!("-----------------------------------------");
 
+
+	println!("{:#?}", parse(String::from("<form><input/></form>")));
+
+	println!("-----------------------------------------");
+
 	println!("{:#?}", parse(String::from("<header><h1>Olá <b>Marcos</b></h1><h2>Sou Frontend</h2></header>")));
 
 	println!("-----------------------------------------");

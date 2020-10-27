@@ -28,6 +28,23 @@ impl HtmlElement {
 	}
 }
 
+const SELF_CLOSE_TAGS: [&str; 14] = [
+	"area",
+	"base",
+	"br", 
+	"col",
+	"embed",
+	"hr",
+	"img",
+	"input",
+	"link",
+	"meta",
+	"param",
+	"source",
+	"track",
+	"wbr",
+];
+
 pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 	let mut parsed: Vec<HtmlElement> = vec![];
 	let mut state: Vec<Actions> = vec![];
@@ -87,11 +104,15 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 						match last_state {
 							Actions::ReadingOpenTagName => {
 								let element = HtmlElement::new(reading.clone());
-								reading = String::new();
+								let tag_name: &str = &reading;
 								parsed.push(element);
 								state.pop();
 
-								state.push(Actions::ReadingInnerTag);
+								if !SELF_CLOSE_TAGS.contains(&tag_name) {
+									state.push(Actions::ReadingInnerTag);
+								}
+
+								reading = String::new();
 							}
 							Actions::ReadingCloseTagName => {
 								state.pop();
@@ -101,6 +122,27 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 						}
 
 						idx += 1;
+					}
+					'/' => {
+						if let Some(next_letter) = to_read.chars().nth(idx + 1) {
+							if next_letter == '>' {
+								match last_state {
+									Actions::ReadingOpenTagName => {
+										let element = HtmlElement::new(reading.clone());
+										reading = String::new();
+										parsed.push(element);
+										
+										state.pop();
+										idx += 2;	
+									}
+									Actions::ReadingCloseTagName => {
+										state.pop();
+										break (parsed, idx);
+									}
+									_ => {}
+								}								
+							}
+						}
 					}
 					_ => {
 						match last_state {
