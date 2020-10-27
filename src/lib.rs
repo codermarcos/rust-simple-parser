@@ -114,6 +114,12 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 
 								reading = String::new();
 							}
+							Actions::ReadingAttributes => {
+								reading = String::new();
+								
+								state.pop();
+								idx += 1;	
+							}
 							Actions::ReadingCloseTagName => {
 								state.pop();
 								break (parsed, idx);
@@ -135,9 +141,11 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 										state.pop();
 										idx += 2;	
 									}
-									Actions::ReadingCloseTagName => {
+									Actions::ReadingAttributes => {
+										reading = String::new();
+										
 										state.pop();
-										break (parsed, idx);
+										idx += 1;	
 									}
 									_ => {}
 								}								
