@@ -7,6 +7,7 @@ enum Actions {
 	ReadingAttributes,
 	ReadingOpenTagName,
 	ReadingCloseTagName,
+	ReadingAttributesKey(String),
 }
 
 #[derive(PartialEq, Debug)]
@@ -14,7 +15,7 @@ pub struct HtmlElement {
 	pub node_type: String,
 	pub text_content: String,
 	pub child_nodes: Vec<HtmlElement>,
-	pub attributes: HashMap<String, String>,
+	pub attributes: HashMap<String, Option<String>>,
 }
 
 impl HtmlElement {
@@ -152,13 +153,55 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 							}
 						}
 					}
+					'=' => {	
+						match last_state {
+							Actions::ReadingAttributes => {							
+								if reading.capacity() > 0 {
+									state.push(Actions::ReadingAttributesKey(reading));
+									reading = String::new();
+									idx += 1;
+								}
+							}
+							_ => {
+								reading = reading + letter.to_string().as_str();
+							}
+						}
+					}
 					_ => {
 						match last_state {
 							Actions::ReadingOpenTagName => {
 								if letter == ' ' {
 									state.pop();
-									state.push(Actions::ReadingAttributes);
 									parsed.push(HtmlElement::new(reading.clone()));
+									state.push(Actions::ReadingAttributes);
+									reading = String::new();
+								} else {
+									reading = reading + letter.to_string().as_str();
+								}
+							}
+							Actions::ReadingAttributes => {
+								if letter == ' ' {
+									let last_idx_parsed = parsed.len() - 1;
+										
+									if reading.capacity() > 0 {
+										parsed[last_idx_parsed].attributes.insert(reading.clone(), None);
+										reading = String::new();
+									}
+
+									state.pop();
+								}	else {
+									reading = reading + letter.to_string().as_str();
+								}
+							}
+							Actions::ReadingAttributesKey(key) => {
+								if letter == ' ' {
+									let last_idx_parsed = parsed.len() - 1;
+										
+									if reading.capacity() > 0 {
+										parsed[last_idx_parsed].attributes.insert(key.to_string(), Some(reading.clone()));
+										reading = String::new();
+										state.pop();
+									}
 								} else {
 									reading = reading + letter.to_string().as_str();
 								}
