@@ -284,6 +284,29 @@ mod tests {
 
 		assert_eq!(expected, lexer);
 	}
+	#[test]
+	fn parse_self_close_nodes() {
+		let html_form = String::from("<form><input /></form>");
+		let lexer = parse(html_form);
+
+		let expected: Vec<HtmlElement> = vec![
+			HtmlElement {
+				node_type: String::from("form"),
+				text_content: String::new(),
+				attributes: HashMap::new(),
+				child_nodes: vec![
+					HtmlElement {
+						node_type: String::from("input"),
+						text_content: String::new(),
+						attributes: HashMap::new(),
+						child_nodes: Vec::new(),
+					},
+				],
+			}
+		];
+
+		assert_eq!(expected, lexer);
+	}
 
 	#[test]
 	fn parse_node_with_sinbling_and_child() {
