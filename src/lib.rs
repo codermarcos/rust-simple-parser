@@ -7,7 +7,7 @@ enum Actions {
 	ReadingAttributes,
 	ReadingOpenTagName,
 	ReadingCloseTagName,
-	ReadingAttributesKey(String),
+	ReadingAttributesValue(String),
 }
 
 #[derive(PartialEq, Debug)]
@@ -153,19 +153,28 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 							}
 						}
 					}
-					'=' => {	
+					'=' | '"' => {	
 						match last_state {
 							Actions::ReadingAttributes => {							
 								if reading.capacity() > 0 {
-									state.push(Actions::ReadingAttributesKey(reading));
+									state.push(Actions::ReadingAttributesValue(reading));
 									reading = String::new();
-									idx += 1;
+								}
+							}
+							Actions::ReadingAttributesValue(key) => {
+								let last_idx_parsed = parsed.len() - 1;
+									
+								if reading.capacity() > 0 {
+									parsed[last_idx_parsed].attributes.insert(key.to_string(), Some(reading.clone()));
+									reading = String::new();
+									state.pop();
 								}
 							}
 							_ => {
 								reading = reading + letter.to_string().as_str();
 							}
 						}
+						idx += 1;
 					}
 					_ => {
 						match last_state {
@@ -175,33 +184,6 @@ pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 									parsed.push(HtmlElement::new(reading.clone()));
 									state.push(Actions::ReadingAttributes);
 									reading = String::new();
-								} else {
-									reading = reading + letter.to_string().as_str();
-								}
-							}
-							Actions::ReadingAttributes => {
-								if letter == ' ' {
-									let last_idx_parsed = parsed.len() - 1;
-										
-									if reading.capacity() > 0 {
-										parsed[last_idx_parsed].attributes.insert(reading.clone(), None);
-										reading = String::new();
-									}
-
-									state.pop();
-								}	else {
-									reading = reading + letter.to_string().as_str();
-								}
-							}
-							Actions::ReadingAttributesKey(key) => {
-								if letter == ' ' {
-									let last_idx_parsed = parsed.len() - 1;
-										
-									if reading.capacity() > 0 {
-										parsed[last_idx_parsed].attributes.insert(key.to_string(), Some(reading.clone()));
-										reading = String::new();
-										state.pop();
-									}
 								} else {
 									reading = reading + letter.to_string().as_str();
 								}
