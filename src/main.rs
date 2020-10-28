@@ -30,5 +30,9 @@ fn main() {
 
 	println!("{:#?}", parse(String::from("<input id=\"teste\" />")));
 
+	println!("tag with spaced attributes -------------------------");
+
+	println!("{:#?}", parse(String::from("<input class=\"teste teste\" />")));
+
 	println!("-----------------------------------------");
 }
