@@ -46,7 +46,7 @@ const SELF_CLOSE_TAGS: [&str; 14] = [
 	"wbr",
 ];
 
-pub fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
+fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 	let mut parsed: Vec<HtmlElement> = vec![];
 	let mut state: Vec<Actions> = vec![];
 	let mut reading = String::new();
