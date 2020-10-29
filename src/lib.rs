@@ -211,6 +211,33 @@ fn parse_shallow(html: String) -> (Vec<HtmlElement>, usize) {
 	}
 }
 
+/// Returns a parsed html with the value given them
+///
+/// # Arguments
+///
+/// * `html` - A string os the html to parse
+///
+/// # Examples
+///
+/// ```
+/// use crate::rust_simple_parser::HtmlElement;
+/// use crate::rust_simple_parser::parse;
+/// use std::collections::HashMap;
+/// 
+///	let html = String::from("<h1>Olá Marcos</h1>");
+///	let parsed = parse(html);
+/// 
+///	let expected: Vec<HtmlElement> = vec![
+///		HtmlElement {
+///			text_content: String::from("Olá Marcos"),
+///			node_type: String::from("h1"),
+///			attributes: HashMap::new(),
+///			child_nodes: Vec::new(),
+///		}
+///	];
+/// 
+/// assert_eq!(expected, parsed);
+/// ```
 pub fn parse(html: String) -> Vec<HtmlElement> {
 	let (parsed, _) = parse_shallow(html);
 	
